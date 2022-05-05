@@ -1,4 +1,5 @@
-% todo: % change paths to data 
+% intial setup: make sure that this folder and the data folder are
+% contained in a shared folder one level up
 clear all; clc;
 set(0,'DefaultFigureWindowStyle','docked')
 %% load prepared data
@@ -52,8 +53,6 @@ for cs = 1:ncs
 end
 %% time axis for plotting
 meanresp.timeax = (1:size(meanresp.pEnv_raw,1))/datafs+min(segmentWindow)/datafs;
-
-
 
 %% note: there is no baseline correction here, instead we're hoping that the pre-event period will average out across the many event repetitions
 
