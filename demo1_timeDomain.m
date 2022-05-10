@@ -128,6 +128,7 @@ vertline(0); horzline(0);
 figure
 for i = 1:length(clusters)
     subplot(1,length(clusters), i)
+    hold on 
     histogram(distribution{i})
     vertline(t_sums(i));
 end
