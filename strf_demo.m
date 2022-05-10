@@ -7,7 +7,7 @@
 
 %% ridge regression or OLS
 ridgeflag =1;
-useRate = 1; % slow or regular speech
+
 run plot_def.m;
 debug =1;
 %% - - - - setup path and load prepared data
@@ -21,10 +21,11 @@ outStrfFolder = fullfile(megdatapath, 'strf_v5_reg_filtdata');
 scaleflag = 0; % scale predictors within each sentence.
 nFoldsRun = 13; %leave one out with 13 paragraphs.
 
-modelfields = {'SentOns_peakRate'};%,'SentOns_peakRateBins', 'SentOns'};%,  'paraOns', 'paraOns_peakRate', 'SentOns',
+modelfields = { 'SentOns_peakRate','SentOns'};%,'SentOns_peakRateBins', 'SentOns'};%,  'paraOns', 'paraOns_peakRate', 'SentOns',
 binaryModelFields = zeros(1,length(modelfields));
 %% load data
-ncs = 1;
+ncs = 1; % change here to fit for multiple subjects
+useRate = 1; % slow or regular speech - change here to fit both rates
 for i = 1:ncs
     alldata(i) = load(fullfile(megdatapath, sprintf('dataAll_ts_cs%d_broadband.mat', i)));
 end
@@ -37,7 +38,7 @@ for i = 1:ncs
     alldata(i).pred(9,:) = sign(alldata(i).pred(4,:));
     alldata(i).predNames{9} = 'peakRateOns';
 
-    % bin peakRate magnitude into 5 bins
+    %% bin peakRate magnitude into 5 bins - - can do for that model
     prval = alldata(i).pred(4, incldata);
     prval(prval ==0) = [];
     qs = quantile(prval, 4);
@@ -102,31 +103,6 @@ for cs = 1:length(alldata)
 end
 
 
-%% ------------------ strf create predictor matrix
-
-function [predTS2] = make_pred_mat(predTS, predNames, modelname)
-modelPN= textscan(modelname, '%s', 'Delimiter', '_');
-modelPN = modelPN{1};
-
-for cpr = 1:length(modelPN)
-    switch modelPN{cpr}
-        case {'paraOns', 'SentOns'}
-            preds{cpr,1} = sign(predTS(strcmpi(modelPN(cpr), predNames),:));
-
-        case {'peakRateOns', 'peakEnvOns'}
-            preds{cpr,1} = sign(predTS(strcmpi(modelPN{cpr}(1:end-3), predNames),:));
-        case  {'peakRateBins'}
-            preds{cpr,1} = predTS(10:end,:);
-        otherwise
-            if ismember(modelPN(cpr), predNames)
-                preds{cpr,1} = predTS(strcmpi(modelPN(cpr), predNames),:);
-            else
-                error('unknown predictor name');
-            end
-    end
-end
-predTS2 = cell2mat(preds);
-end
 
 %% ----------------------- strf main function
 function [strf] = strf_main_v2_TSFormat(cdata, modelname, cs, binaryModelFields, ...
@@ -320,6 +296,33 @@ if ~exist(strffolder, 'dir') , mkdir(strffolder), end
 strfOutFile = fullfile(strffolder, strffilename);
 save(strfOutFile, '-struct', 'strf', '-v7.3')
 fprintf(2,'saved %s to %s. \n', strf.shortname,strfOutFile);
+end
+
+
+%% ------------------ strf create predictor matrix
+
+function [predTS2] = make_pred_mat(predTS, predNames, modelname)
+modelPN= textscan(modelname, '%s', 'Delimiter', '_');
+modelPN = modelPN{1};
+
+for cpr = 1:length(modelPN)
+    switch modelPN{cpr}
+        case {'paraOns', 'SentOns'}
+            preds{cpr,1} = sign(predTS(strcmpi(modelPN(cpr), predNames),:));
+
+        case {'peakRateOns', 'peakEnvOns'}
+            preds{cpr,1} = sign(predTS(strcmpi(modelPN{cpr}(1:end-3), predNames),:));
+        case  {'peakRateBins'}
+            preds{cpr,1} = predTS(10:end,:);
+        otherwise
+            if ismember(modelPN(cpr), predNames)
+                preds{cpr,1} = predTS(strcmpi(modelPN(cpr), predNames),:);
+            else
+                error('unknown predictor name');
+            end
+    end
+end
+predTS2 = cell2mat(preds);
 end
 
 %% ----------------------- create time-delayed predictor matrix function
